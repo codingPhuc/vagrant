@@ -1,0 +1,53 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2204"
+  config.vm.box_version = "4.3.12"
+  
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update -y
+    sudo apt-get upgrade -y
+
+    # Docker
+    sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt-get update -y
+    sudo apt-get install -y docker-ce
+
+    # add user 'vagrant' 
+    sudo usermod -aG docker vagrant
+
+    # Node.js (18.x)
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+
+    # check and run docker
+    sudo systemctl start docker
+    sudo systemctl enable docker
+
+    # Nginx
+    sudo apt-get install -y nginx
+
+    # check and run nginx
+    sudo systemctl start nginx
+    sudo systemctl enable nginx
+  SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL
+    cat <<EOF > /etc/nginx/sites-available/default
+    server {
+      listen 80;
+
+      location / {
+          proxy_pass http://localhost:3000; # Proxy tới ứng dụng Node.js chạy trên Docker
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+      }
+    }
+    EOF
+    sudo systemctl restart nginx
+  SHELL
+end

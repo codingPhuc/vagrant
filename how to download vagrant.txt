@@ -1,0 +1,59 @@
+1. Download Virtual Box via the link: https://www.virtualbox.org/wiki/Downl...
+2. Install Virtual Box
+3. Download Vagrant via the Link: https://developer.hashicorp.com/vagra...
+4. Install Vagrant
+5. Open Command Prompt
+6. Add The Ubuntu 20.04 (Focal) image to your box list:
+Run the Following commands one after the other:
+  1. vagrant box add ubuntu/focal64
+  2. vagrant init ubuntu/focal64
+  3. vagrant plugin install vagrant-vbguest
+  4. vagrant up
+Having Issues Running the Vagrant? Showing you this?
+ 
+
+
+
+git clone https://github.com/finallyayo/covid-node 
+sudo apt update
+curl -fsSL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt install -y nodejs
+cd covid-node 
+npm install
+cd .. 
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+sudo apt update -y
+sudo apt install -y docker-ce
+sudo usermod -aG docker vagrant
+sudo usermod -aG docker $USER
+cat > Dockerfile << 'EOF'
+> FROM node:16-alpine
+>
+> WORKDIR /app
+yarn --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Expose the application port
+EXPOSE 4000
+
+# Start the appl>
+> # Copy and install dependencies
+> COPY package.json yarn.lock ./
+> RUN yarn --frozen-lockfile
+>
+> # Copy source code
+> COPY . .
+>
+> # Expose the application port
+> EXPOSE 4000
+>
+> # Start the application
+> CMD yarn start
+> EOF
+newgrp docker
+docker build -t covid
+docker run -p 4000:4000 covid
