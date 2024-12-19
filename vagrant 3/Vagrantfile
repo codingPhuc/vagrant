@@ -7,6 +7,8 @@ Vagrant.configure("2") do |config|
     web01.vm.provider "vmware_desktop" do |vmware|
       vmware.gui = false  # Run the VM without a GUI
       # vmware.allowlist_verified = true
+      vmware.memory = "4096"
+      vmware.cpus = "2"
     end
 
     # Provision the VM with a shell script
@@ -54,7 +56,29 @@ EOL
       # docker pull phuc2411/getting-started-todo-app
       docker rm -v -f $(docker ps -qa)  # Remove all existing Docker containers
       systemctl status nginx.service  # Check the status of the Nginx service
-      docker run --name pop -p 80:3000 -d phuc2411/getting-started-todo-app  # Run the Docker container for the application
+      # docker run --name pop -p 80:3000 -d phuc2411/getting-started-todo-app  # Run the Docker container for the application
     SHELL
+    web01.vm.provision "shell", name: "run_Tooljet", inline: <<-SHELL
+    mkdir -p /home/vagrant/tooljet
+    cat <<- EOF > /home/vagrant/tooljet/docker-compose.yml
+    version: "3.8"
+    services:
+      tooljet:
+        image: tooljet/try:ee-lts-latest
+        container_name: tooljet
+        restart: unless-stopped
+        ports:
+          - "80:80"
+        volumes:
+          - tooljet_data:/var/lib/postgresql/13/main
+        platform: linux/amd64
+    volumes:
+      tooljet_data:
+EOF
+    # Start ToolJet
+    cd /home/vagrant/tooljet
+    docker-compose up -d
+    SHELL
+
   end
 end
